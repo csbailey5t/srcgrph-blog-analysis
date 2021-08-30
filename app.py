@@ -1,8 +1,10 @@
 import frontmatter
+import re
 import spacy
 import streamlit as st
 import textdescriptives as td
 
+from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from pathlib import Path, PurePath
 
@@ -22,6 +24,33 @@ def get_post_paths(data_dir):
     return list(post_paths)
 
 
+def clean_md_text(md_string):
+
+    # remove fenced code blocks
+    # regex from https://stackoverflow.com/questions/64111377/remove-markdown-code-block-from-python-string
+    no_codeblocks = re.sub(
+        r"^```[^\S\r\n]*[a-z]*(?:\n(?!```$).*)*\n```", "", md_string, 0, re.MULTILINE
+    )
+
+    # remove html
+    soup = BeautifulSoup(no_codeblocks, "html.parser")
+    for el in soup.find_all():
+        el.decompose()
+
+    # remove markdown link urls
+    no_md_urls = re.sub(r"\(([^)]+)\)", "", soup.text)
+
+    # remove other urls
+    no_urls = re.sub(r"http\S+", "", no_md_urls)
+
+    # hackily, directly remove a few particular characters
+    clean_text = (
+        no_urls.replace("`", "").replace("[", "").replace("]", "").replace("!", "")
+    )
+
+    return clean_text
+
+
 def get_post_data(post_paths):
     """
     Takes a list of filenames, reads contents, returns a list of BlogPost
@@ -29,14 +58,13 @@ def get_post_data(post_paths):
     posts = []
     for post_path in post_paths:
         post = frontmatter.load(post_path)
-        posts.append(BlogPost(post["title"], post.content))
+        clean_post = clean_md_text(post.content)
+        posts.append(BlogPost(post["title"], clean_post))
     return posts
 
 
 # TODO:
 # - organize blogposts by year, so, select year, then post
-# - remove html from post content
-# - remove code blocks
 # - convert \n to a space
 
 
@@ -47,14 +75,26 @@ def main():
     st.header("Sourcegraph blog analysis")
 
     post_paths = get_post_paths("blogposts")
-    post_data = get_post_data(post_paths)
+    # post_data = get_post_data(post_paths)
 
-    docs = nlp.pipe((blogpost.content for blogpost in post_data))
-    st.write(td.extract_df(docs))
+    # docs = nlp.pipe((blogpost.content for blogpost in post_data))
+    # st.write(td.extract_df(docs))
 
     st.sidebar.header("Select a blog post to analyze")
-    st.sidebar.selectbox("Post", options=post_paths)
-    # st.sidebar.write(fns)
+    selected_post = st.sidebar.selectbox("Post", options=post_paths)
+
+    blog_post = frontmatter.load(selected_post)
+    clean_post = clean_md_text(blog_post.content)
+    doc = nlp(clean_post)
+    st.subheader(blog_post["title"])
+    st.write("**Readability stats**")
+    st.write(doc._.readability)
+    # st.write("**Token (word) level stats**")
+    # st.write(doc._.token_length)
+    st.write("**Token count stats **")
+    st.write(doc._.counts)
+    st.write("**Post text**")
+    st.write(doc)
 
 
 if __name__ == "__main__":
