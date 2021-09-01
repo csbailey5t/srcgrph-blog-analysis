@@ -5,6 +5,7 @@ import streamlit as st
 import textdescriptives as td
 
 from bs4 import BeautifulSoup
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path, PurePath
 
@@ -87,12 +88,30 @@ def main():
     clean_post = clean_md_text(blog_post.content)
     doc = nlp(clean_post)
     st.subheader(blog_post["title"])
-    st.write("**Readability stats**")
+    st.write("**Readability stats** - remember to take this with a grain of salt")
     st.write(doc._.readability)
-    # st.write("**Token (word) level stats**")
-    # st.write(doc._.token_length)
     st.write("**Token count stats **")
     st.write(doc._.counts)
+
+    # Turn this into a three column layout
+    # Show most common nouns
+    st.write("**10 most common nouns**")
+    nouns = [t.text for t in doc if t.pos_ == "NOUN"]
+    noun_counter = Counter(nouns)
+    st.write(", ".join([word for (word, _) in noun_counter.most_common(10)]))
+
+    # Show most common verbs
+    st.write("**10 most common verbs**")
+    verbs = [t.text for t in doc if t.pos_ == "VERB"]
+    verb_counter = Counter(verbs)
+    st.write(", ".join([word for (word, _) in verb_counter.most_common(10)]))
+
+    # Show most common adjectives
+    st.write("**10 most common adjectives**")
+    adjectives = [t.text for t in doc if t.pos_ == "ADJ"]
+    adj_counter = Counter(adjectives)
+    st.write(", ".join([word for (word, _) in adj_counter.most_common(10)]))
+
     st.write("**Post text**")
     st.write(doc)
 
