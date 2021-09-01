@@ -89,6 +89,9 @@ def main():
     doc = nlp(clean_post)
     st.subheader(blog_post["title"])
     st.write("**Readability stats** - remember to take this with a grain of salt")
+    st.write(
+        "For info on common readability scores, take a look at [this](https://en.wikipedia.org/wiki/Readability#Popular_readability_formulas)."
+    )
     st.write(doc._.readability)
     st.write("**Token count stats **")
     st.write(doc._.counts)
