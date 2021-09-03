@@ -88,7 +88,7 @@ def main():
     clean_post = clean_md_text(blog_post.content)
     doc = nlp(clean_post)
     st.subheader(blog_post["title"])
-    st.write("**Readability stats** - remember to take this with a grain of salt")
+    st.write("**Readability stats** - remember to take these with a grain of salt")
     st.write(
         "For info on common readability scores, take a look at [this](https://en.wikipedia.org/wiki/Readability#Popular_readability_formulas)."
     )
