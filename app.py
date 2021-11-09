@@ -3,6 +3,7 @@ import re
 import spacy
 import streamlit as st
 import textdescriptives as td
+import textacy
 
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -69,6 +70,13 @@ def get_post_data(post_paths):
 # - convert \n to a space
 
 
+def get_textrank_keywords(doc):
+    """
+    Takes a spacy doc, returns a list of keywords from textacy
+    """
+    return textacy.extract.keyterms.textrank(doc, topn=10)
+
+
 def main():
     nlp = spacy.load("en_core_web_md")
     nlp.add_pipe("textdescriptives")
@@ -114,6 +122,11 @@ def main():
     adjectives = [t.text for t in doc if t.pos_ == "ADJ"]
     adj_counter = Counter(adjectives)
     st.write(", ".join([word for (word, _) in adj_counter.most_common(10)]))
+
+    # Show keywords
+    st.write("**10 most common keywords using Textrank**")
+    keywords = get_textrank_keywords(doc)
+    st.write(", ".join([word for (word, _) in keywords]))
 
     st.write("**Post text**")
     st.write(doc)
